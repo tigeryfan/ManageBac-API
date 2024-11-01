@@ -8,26 +8,34 @@ class NoDomain(Exception):
         self.message = message
         super().__init__(self.message)
 
+class InvalidRegion(Exception):
+    def __init__(self, message="""Make sure you're using a correct MB region. Options are global, us, and cn"""):
+        self.message = message
+        super().__init__(self.message)
+
 class NoCookie(Exception):
     def __init__(self, message="""Make sure you defined the cookie in the function. main("domain", "cookie")\nEx:run(domain,"0sjd8cho1oasd98afashvas9qryt8q3845iqengfiehr")"""):
         self.message = message
         super().__init__(self.message)
 
 class InvalidURL(Exception):
-    def __init__(self, domain, url, message="""INVALID URL: Make sure you defined the domain PROPERLY in the function. main("domain", "cookie")\nEx:run("myschool",cookie) OR run("myschool.managebac.com",cookie)"""):
+    def __init__(self, domain, url, suffix, message="""INVALID URL: Make sure you defined the domain PROPERLY in the function. main("domain", "cookie")\nEx:run("myschool",cookie) OR run("myschool.managebac.com",cookie)"""):
         self.message = message
         self.url = url
         self.domain = domain
     
     def __str__(self):
-        print(f"https://[red]{domain}[/red].managebac.com")
+        print(f"https://[red]{domain}[/red]{suffix}")
         return  "is an invalid domain, please verify information and retry"
 
-def mbapi(domain:str=None, cookie:str=None):
+def mbapi(domain:str=None, cookie:str=None, region:str="global"):
     """
     Param DOMAIN: the subdomain of your FariaOne ManageBac site (The ****. part of ****.managebac.com)
     Param COOKIE: Your MB authentication cookie (it's called _managebac_session) that you can find by pressing F12, then clicking Storage, and Cookies. (Only the value!)
+    Param REGION: Your MB website's region (global, us, cn)
     """
+    if region!="global" or region!="us" or region!="cn":
+        raise InvalidRegion
     fdict = {"studentname": "", "deadlines": [], "tasks": []}
     domain = domain or None
     cookie = cookie or None
@@ -46,21 +54,31 @@ def mbapi(domain:str=None, cookie:str=None):
             if cookie.startswith(i):
                 cookie = cookie.replace(i, "")
     def domaincheck(domain):
-        if domain.endswith("""managebac.com"""):
+        if domain.endswith("""managebac.com""") and region=="global":
             domain = domain.replace(".managebac.com",'')
+        elif domain.endswith("""managebac.cn""") and region=="cn":
+            domain = domain.replace(".managebac.cn",'')
+        elif domain.endswith("""us.managebac.com""") and region=="us":
+            domain = domain.replace(".us.managebac.com",'')
+    if region=="global":
+        suffix = ".managebac.com"
+    elif region=="cn":
+        suffix = ".managebac.cn"
+    elif region=="us":
+        suffix = ".us.managebac.com"
     cookiecheck(cookie)
     domaincheck(domain)
     try:
         cook = {"_managebac_session": f"{cookie}", "hide_osc_announcement_modal" : "true"}
         ddeadline = []
         dtask = []
-        url = f"https://{domain}.managebac.com/student/tasks_and_deadlines?upcoming_page="
+        url = f"https://{domain}{suffix}/student/tasks_and_deadlines?upcoming_page="
         for i in range(1,4):
             try:
                 r = req.get(url+f"{i}",cookies=cook)
             except Exception as e:
-                print(f"https://[red]{domain}[/red].managebac.com/student/tasks_and_deadlines?upcoming_page=")
-                raise InvalidURL(domain, url)
+                print(f"https://[red]{domain}[/red]{region}/student/tasks_and_deadlines?upcoming_page=")
+                raise InvalidURL(domain, url, suffix)
             soup = BeautifulSoup(r.content, "html.parser")
             results = soup.find(class_="upcoming-tasks")
             try:
@@ -74,7 +92,7 @@ def mbapi(domain:str=None, cookie:str=None):
                 tasks = results.find_all("div", class_="line task-node anchor js-presentation")
                 deadlines = results.find_all("div", class_="line")
             except Exception as e:
-                raise InvalidURL(domain, url)
+                raise InvalidURL(domain, url, suffix)
             for task in tasks:
                 day = task.find("div", class_="day").text
                 month = task.find("div", class_="month").text
@@ -83,7 +101,7 @@ def mbapi(domain:str=None, cookie:str=None):
                 link = task.find("a", href=True)
                 link = link['href']
                 id = link.split('core_tasks/',1)[1]
-                tdict = {"id": id, "link" : f"https://{domain}.managebac.com{str(link)}","title": title, "due-date": f"{day}/{cal[f'{month}']}"}
+                tdict = {"id": id, "link" : f"https://{domain}{region}{str(link)}","title": title, "due-date": f"{day}/{cal[f'{month}']}"}
                 dtask.append(tdict)
             for task in deadlines:
                 title = task.find("h4", class_="title")
@@ -95,7 +113,7 @@ def mbapi(domain:str=None, cookie:str=None):
                     link = task.find("a", href=True)
                     link = link['href']
                     id = link.split('events/',1)[1]
-                    ddict = {"id": id, "link" : f"https://{domain}.managebac.com{str(link)}","title": title, "due-date": f"""{datebadge.find("div", class_="day").text}/{cal[f'{datebadge.find("div", class_="month").text}']}"""}
+                    ddict = {"id": id, "link" : f"https://{domain}{region}{str(link)}","title": title, "due-date": f"""{datebadge.find("div", class_="day").text}/{cal[f'{datebadge.find("div", class_="month").text}']}"""}
                     ddeadline.append(ddict)
             del(tasks, soup, results, r)
         fdict['studentname'] = name
