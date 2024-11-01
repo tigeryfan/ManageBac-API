@@ -34,7 +34,7 @@ def mbapi(domain:str=None, cookie:str=None, region:str="global"):
     Param COOKIE: Your MB authentication cookie (it's called _managebac_session) that you can find by pressing F12, then clicking Storage, and Cookies. (Only the value!)
     Param REGION: Your MB website's region (global, us, cn)
     """
-    if region!="global" or region!="us" or region!="cn":
+    if region!="global" and region!="us" and region!="cn":
         raise InvalidRegion
     fdict = {"studentname": "", "deadlines": [], "tasks": []}
     domain = domain or None
