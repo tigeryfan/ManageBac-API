@@ -52,16 +52,23 @@ import managebac_api
 from managebac_api import managebac_api
 
 
-managebac_api.mbapi(domain, cookie)
+managebac_api.mbapi(domain, cookie, region)
 ```
 
 ## Usage
 
 ```py
-managebac_api.mbapi("IBS","o1h98dh93hr2r32d...")
+managebac_api.mbapi("IBS","o1h98dh93hr2r32d...", "global")
 ```
 1st part of the function is the subdomain that you use for managebac. In this case IBS.managebac.com would be what the student normally visits
-2nd part is the session cook that you can get can get by look in the dev console (F12)
+2nd part is the session cookie that you can get can get by look in the dev console (F12)
+3rd part is the region (global, cn, us).
+The table below shows the website for each region.
+| Region | URL                |
+|--------|--------------------|
+| global | *.managebac.com    |
+| cn     | *.managebac.cn     |
+| us     | *.us.managebac.com |
 
 ## Contributing
 
